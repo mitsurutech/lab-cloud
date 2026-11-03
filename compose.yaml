@@ -1,0 +1,52 @@
+# Cloud: MiniStack, an emulator of three AWS services, for you alone. A bucket (S3), a queue
+# (SQS) and a table (DynamoDB), made with the same AWS CLI commands you would use on the real
+# thing, in a stack of your own that nobody else can reach.
+#
+# Your copy is one service, cloud, and it has no way out to the internet. It is an emulator,
+# not AWS: nothing here is billed, nothing leaves this copy, and it checks no password. The
+# lab's terminal has the AWS CLI but no keys for it, so the lesson first sets a made-up key,
+# a region and the stack's address:
+#   export AWS_ACCESS_KEY_ID=test AWS_SECRET_ACCESS_KEY=test AWS_DEFAULT_REGION=us-east-1
+#   export AWS_ENDPOINT_URL=http://cloud:4566
+# then try aws s3 mb, aws s3 cp and aws s3 ls, aws sqs create-queue, send-message and
+# receive-message, and aws dynamodb create-table, put-item, get-item and query.
+#
+# Only S3, SQS and DynamoDB are switched on. Lambda is deliberately not: it would run code
+# inside the stack as root. Asking the stack for Lambda, or for any service not listed in
+# SERVICES, is refused. What you make is kept in a named volume, so it is still there after
+# you stop the lab and start it again.
+#
+# Hand in the replies to a short session: a bucket with an object put, listed and got, a queue
+# with a message sent, received and deleted, a table with an item put, got and queried, and
+# the error for a key that is not there, with a sentence on what MiniStack is not.
+
+services:
+  cloud:
+    image: ministackorg/ministack:1.4.8
+    environment:
+      # The whole of the hardening: nothing else can be asked of this stack.
+      SERVICES: s3,sqs,dynamodb
+      PERSIST_STATE: "1"
+      S3_PERSIST: "1"
+      STATE_DIR: /data/state
+      S3_DATA_DIR: /data/s3
+    volumes:
+      - clouddata:/data
+    expose: ["4566"]
+    # The image carries Python and no curl, so the stack's own health address is read with it.
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:4566/_ministack/health', timeout=3)"]
+      interval: 3s
+      timeout: 5s
+      retries: 40
+    # Measured: the stack with the three services peaked near 75 MB while a bucket, a queue
+    # and a table were made, used, stopped and started again. 256 MB is that with room above.
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+    labels:
+      lab.title: Cloud (MiniStack)
+
+volumes:
+  clouddata:

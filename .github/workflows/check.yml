@@ -1,0 +1,13 @@
+name: check
+
+on:
+  push:
+  pull_request:
+
+# Starts the lab the way the platform's runner does and checks what the README promises.
+jobs:
+  lab:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: test/check.sh

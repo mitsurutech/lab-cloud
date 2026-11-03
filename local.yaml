@@ -1,0 +1,5 @@
+# Publishes the lab on your own machine only (127.0.0.1), for running it outside the platform:
+#   docker compose -f compose.yaml -f local.yaml up
+services:
+  cloud:
+    ports: ["127.0.0.1:4566:4566"]
